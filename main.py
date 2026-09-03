@@ -8,8 +8,6 @@ class Enemy:
         self.damage = damage
         self.gold = gold
         
-
-
 class Hero:
     def __init__(self, name):
         self.name = name
@@ -23,10 +21,63 @@ class Hero:
         self.hp -= amount
 
 enemies = [
-    Enemy("Goblin", 35, 5, 10),
-    Enemy("Orc", 70, 15, 30)
+    Enemy("Zombie", 50, 5, 5),
+    Enemy("Vampire", 75, 7, 10),
+    Enemy("Werewolf", 110, 4, 15),
+    Enemy("Witch", 60, 15, 20),
+    Enemy("Ghost", 1, 1, 1),
 ]
 
+def generate_enemy():
+    enemy = random.choice(enemies)
+
+    return Enemy(
+        enemy.name,
+        enemy.hp,
+        enemy.damage,
+        enemy.gold
+    )
+
+def battle(hero, enemy):
+    print(f"""
+========== BATTLE ==========
+
+A wild {enemy.name} appeared!
+""")
+
+    while hero.hp > 0 and enemy.hp > 0:
+        print(f"""
+{hero.name}: {hero.hp}/{hero.max_hp} HP
+{enemy.name}: {enemy.hp} HP
+""")
+
+        print("1 - Attack")
+        print("2 - Run")
+
+        choice = input("Type here: ")
+
+        if choice == "1":
+            enemy.hp -= hero.damage
+            print(f"You dealt {hero.damage} damage!")
+
+            if enemy.hp <= 0:
+                print(f"You defeated the {enemy.name}!")
+                hero.gold += enemy.gold
+                print(f"You earned {enemy.gold} gold!")
+                break
+
+            hero.take_damage(enemy.damage)
+            print(f"The {enemy.name} dealt {enemy.damage} damage!")
+
+        elif choice == "2":
+            print("You ran away!")
+            break
+
+        else:
+            print("Invalid choice.")
+
+    if hero.hp <= 0:
+        print("You died!")
 
 def show_character(hero):
     print(f"""
@@ -36,7 +87,6 @@ Gold: {hero.gold}
 Damage: {hero.damage}
 """)
     
-
 def store(hero):
     while True:
         print("""
@@ -86,7 +136,7 @@ def store(hero):
 
         else:
             print("Invalid choice.")
-
+  
 def journey(hero):
       print("""
 ========== JOURNEY ==========
@@ -99,7 +149,8 @@ You leave the town and begin your journey...
         print("Especial!")
 
       elif event <= 750:
-        print("Encontrou inimigo!")
+          enemy = generate_enemy()
+          battle(hero, enemy)
 
       elif event <= 950:
         print("Encontrou item!")
@@ -107,9 +158,6 @@ You leave the town and begin your journey...
       else:
         print("Caiu numa armadilha!")
       
-
-
-
 def show_menu():
     print("""
 What do you want to do?
@@ -123,7 +171,6 @@ What do you want to do?
     choice = input("Type here: ")
 
     return choice
-
 
 def main():
     print("""
