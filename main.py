@@ -5,7 +5,7 @@ import time
 def wait():
     for i in range(2):
         print(".")
-        time.sleep(1)
+        time.sleep(.75)
 
 
 # ==============================
@@ -23,15 +23,17 @@ class Enemy:
 
 enemies = [
     Enemy("Zombie", 50, 5, 10, 10),
-    Enemy("Vampire", 75, 7, 20, 10),
-    Enemy("Werewolf", 110, 4, 30, 10),
-    Enemy("Witch", 60, 15, 40, 10),
+    Enemy("Vampire", 75, 7, 20, 15),
+    Enemy("Werewolf", 110, 11, 30, 40),
+    Enemy("Witch", 60, 15, 40, 20),
     Enemy("Ghost", 1, 1, 1, 10),
+    Enemy("Minotaur", 1000, 50, 500, 250)
 ]
 
 
 def generate_enemy():
     enemy = random.choice(enemies)
+
 
     return Enemy(
         enemy.name,
@@ -113,6 +115,8 @@ class Hero:
             self.level += 1
             self.xp_need += 10
             self.max_hp += 10
+            self.hp = self.max_hp
+
 
             print(f"LEVEL UP!")
             print(f"You are now level {self.level}!")
