@@ -3,7 +3,7 @@ import time
 
 
 def wait():
-    for i in range(3):
+    for i in range(2):
         print(".")
         time.sleep(1)
 
@@ -108,10 +108,11 @@ class Hero:
         self.hp -= amount
 
     def leveling(self):
-        if self.xp >= self.xp_need:
+        while self.xp >= self.xp_need:
             self.xp -= self.xp_need
             self.level += 1
             self.xp_need += 10
+            self.max_hp += 10
 
             print(f"LEVEL UP!")
             print(f"You are now level {self.level}!")
