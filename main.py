@@ -268,6 +268,8 @@ def show_character(hero):
 ========== CHARACTER ==========
 
 Hero: {hero.name}
+Level: {hero.level}
+XP: {hero.xp}/{hero.xp_need}
 HP: {hero.hp}/{hero.max_hp}
 Gold: {hero.gold}
 Damage: {hero.damage}
@@ -525,7 +527,6 @@ You have {hero.gold} Gold.
 
 def journey(hero):
     global turno
-    turno+= 1
 
     print("""
 ========== JOURNEY ==========
@@ -547,9 +548,10 @@ You leave the town and begin your journey...
     # Enemy
     elif event <= 850:
 
+        turno += 1
+
         enemy = generate_enemy()
         battle(hero, enemy)
-        
 
     # Item
     elif event <= 950:
@@ -564,7 +566,7 @@ You leave the town and begin your journey...
         damage = hero.hp // 10
         hero.hp -= damage
         print(f"You lose {damage} HP!")
-        
+
         wait()
 
 
