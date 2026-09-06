@@ -93,20 +93,38 @@ def find_item(hero):
 # HERO
 # ==============================
 
+WEAPONS = {
+    "Fists": 5,
+    "Wooden Sword": 15,
+    "Stone Sword": 30,
+    "Iron Sword": 45
+}
+
 class Hero:
     def __init__(self, name):
         self.name = name
         self.hp = 100
         self.max_hp = 100
         self.gold = 0
-        self.damage = 10
+
         self.weapon = "Fists"
+        self.buffs = 0
+        self.damage = WEAPONS[self.weapon] + self.buffs
+
         self.inventory = []
         self.xp = 0
         self.xp_need = 100
         self.level = 1
-        self.pet_dmg = 10
+
+        self.pet_dmg = 0
         self.pet_name = "none"
+
+    def update_damage(self):
+        self.damage = WEAPONS[self.weapon] + self.buffs
+
+    def add_buff(self, amount):
+        self.buffs += amount
+        self.update_damage()
 
     def take_damage(self, amount):
         self.hp -= amount
@@ -119,12 +137,11 @@ class Hero:
             self.max_hp += 10
             self.hp = self.max_hp
 
-
-            print(f"LEVEL UP!")
+            print("LEVEL UP!")
             print(f"You are now level {self.level}!")
 
-            
 
+      
 
 # ==============================
 # BATTLE
@@ -385,7 +402,7 @@ You have {hero.gold} Gold.
                 hero.gold -= 45
 
                 hero.weapon = "Wooden Sword"
-                hero.damage += 10
+                hero.update_damage()
 
                 print("You equipped a Wooden Sword!")
                 print(f"Damage: {hero.damage}")
@@ -409,7 +426,7 @@ You have {hero.gold} Gold.
                 hero.gold -= 100
 
                 hero.weapon = "Stone Sword"
-                hero.damage += 25
+                hero.update_damage()
 
                 print("You equipped a Stone Sword!")
                 print(f"Damage: {hero.damage}")
@@ -433,7 +450,7 @@ You have {hero.gold} Gold.
                 hero.gold -= 300
 
                 hero.weapon = "Iron Sword"
-                hero.damage += 40
+                hero.update_damage()
 
                 print("You equipped an Iron Sword!")
                 print(f"Damage: {hero.damage}")
