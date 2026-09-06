@@ -5,12 +5,15 @@ import time
 def wait():
     for i in range(2):
         print(".")
-        time.sleep(.75)
+        time.sleep(.5)
 
 
 # ==============================
 # ENEMY
 # ==============================
+
+turno = 0
+
 
 class Enemy:
     def __init__(self, name, hp, damage, gold, xp):
@@ -22,27 +25,32 @@ class Enemy:
 
 
 enemies = [
-    Enemy("Zombie", 50, 5, 10, 10),
-    Enemy("Vampire", 75, 7, 20, 15),
-    Enemy("Werewolf", 110, 11, 30, 40),
-    Enemy("Witch", 60, 15, 40, 20),
-    Enemy("Ghost", 1, 1, 1, 10),
-    Enemy("Minotaur", 1000, 50, 500, 250)
+    Enemy("Zombie", 30, 5, 15, 20),
+    Enemy("Vampire", 40, 7, 20, 25),
+    Enemy("Werewolf", 40, 15, 30, 40),
+    Enemy("Witch", 20, 15, 40, 40),
+    Enemy("Ghost", 40, 10, 40, 40)
 ]
+
+minotaur = Enemy("Minotaur", 400, 20, 500, 250)
 
 
 def generate_enemy():
-    enemy = random.choice(enemies)
+    if turno % 25 == 0:
+        enemy = minotaur
+    else:
+        enemy = random.choice(enemies)
 
+    damage = enemy.damage * (1 + turno * 0.10)
+    hp = enemy.hp * (1 + turno * 0.10)
 
     return Enemy(
         enemy.name,
-        enemy.hp,
-        enemy.damage,
+        hp,
+        damage,
         enemy.gold,
         enemy.xp
     )
-
 
 # ==============================
 # ITEM
@@ -72,7 +80,6 @@ def find_item(hero):
     if item_found.name == "15 Gold":
         hero.gold += 15
 
-        print("You received 15 Gold!")
         print(f"Gold: {hero.gold}")
 
     elif item_found.name == "30 Gold":
@@ -94,10 +101,11 @@ def find_item(hero):
 # ==============================
 
 WEAPONS = {
-    "Fists": 5,
-    "Wooden Sword": 15,
-    "Stone Sword": 30,
-    "Iron Sword": 45
+    "Fists": 10,
+    "Wooden Sword": 20,
+    "Stone Sword": 35,
+    "Iron Sword": 45,
+    "Diamond Sword": 70,
 }
 
 class Hero:
@@ -109,7 +117,9 @@ class Hero:
 
         self.weapon = "Fists"
         self.buffs = 0
-        self.damage = WEAPONS[self.weapon] + self.buffs
+        self.level_damage = 0
+        self.damage = WEAPONS[self.weapon] + self.buffs + self.level_damage
+        
 
         self.inventory = []
         self.xp = 0
@@ -120,7 +130,7 @@ class Hero:
         self.pet_name = "none"
 
     def update_damage(self):
-        self.damage = WEAPONS[self.weapon] + self.buffs
+        self.damage = WEAPONS[self.weapon] + self.buffs + self.level_damage
 
     def add_buff(self, amount):
         self.buffs += amount
@@ -133,8 +143,10 @@ class Hero:
         while self.xp >= self.xp_need:
             self.xp -= self.xp_need
             self.level += 1
-            self.xp_need += 10
-            self.max_hp += 10
+            self.xp_need += 25
+            self.max_hp += 50
+            self.level_damage += 5
+            self.update_damage()
             self.hp = self.max_hp
 
             print("LEVEL UP!")
@@ -363,11 +375,18 @@ def store(hero):
 
 You have {hero.gold} Gold.
 
+------- CONSUMABLES -------
+
 1 - Health Potion - 15 Gold
+
+--------- SWORDS ----------
+
 2 - Wooden Sword  - 45 Gold
 3 - Stone Sword   - 100 Gold
 4 - Iron Sword    - 300 Gold
-5 - Exit
+5 - Diamond Sword - 800 Gold
+
+6 - Exit
 """)
 
         choice = input("Type here: ")
@@ -462,8 +481,32 @@ You have {hero.gold} Gold.
 
                 print("You don't have enough gold.")
 
-        # Exit
+# Diamond Sword
         elif choice == "5":
+
+            if hero.weapon == "Diamond Sword":
+
+                print("You already have an Diamond Sword.")
+
+            elif hero.gold >= 800:
+
+                hero.gold -= 800
+
+                hero.weapon = "Diamond Sword"
+                hero.update_damage()
+
+                print("You equipped an Diamond Sword!")
+                print(f"Damage: {hero.damage}")
+                print(f"Gold: {hero.gold}")
+
+                wait()
+
+            else:
+
+                print("You don't have enough gold.")
+
+        # Exit
+        elif choice == "6":
 
             print("You left the Store.")
 
@@ -481,6 +524,8 @@ You have {hero.gold} Gold.
 # ==============================
 
 def journey(hero):
+    global turno
+    turno+= 1
 
     print("""
 ========== JOURNEY ==========
@@ -503,8 +548,8 @@ You leave the town and begin your journey...
     elif event <= 850:
 
         enemy = generate_enemy()
-
         battle(hero, enemy)
+        
 
     # Item
     elif event <= 950:
@@ -516,9 +561,10 @@ You leave the town and begin your journey...
 
         print("You fell into a trap!")
 
-        hero.hp -= hero.hp // 10
-        print(f"You lose {hero.hp // 10}HP!")
-
+        damage = hero.hp // 10
+        hero.hp -= damage
+        print(f"You lose {damage} HP!")
+        
         wait()
 
 
@@ -528,7 +574,8 @@ You leave the town and begin your journey...
 
 def show_menu():
 
-    print("""
+    print(f"""
+    turno {turno}
 What do you want to do?
 
 1 - Go to Store
