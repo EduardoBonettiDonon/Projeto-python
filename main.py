@@ -105,7 +105,9 @@ class Hero:
         self.xp = 0
         self.xp_need = 100
         self.level = 1
-        
+        self.pet_dmg = 10
+        self.pet_name = "none"
+
     def take_damage(self, amount):
         self.hp -= amount
 
@@ -153,6 +155,17 @@ A wild {enemy.name} appeared!
             enemy.hp -= hero.damage
 
             print(f"You dealt {hero.damage} damage!")
+
+            if hero.pet_dmg == 0:
+                pass
+
+            else:
+
+                enemy.hp -= hero.pet_dmg
+
+                print(f"Your pet dealt {hero.pet_dmg} damage")
+
+
 
             if enemy.hp <= 0:
 
@@ -317,6 +330,7 @@ def use_item(hero):
         )
 
         wait()
+
 
 
 # ==============================
@@ -485,6 +499,9 @@ You leave the town and begin your journey...
 
         print("You fell into a trap!")
 
+        hero.hp -= hero.hp // 10
+        print(f"You lose {hero.hp // 10}HP!")
+
         wait()
 
 
@@ -517,7 +534,7 @@ def main():
 
     print("""
 ================================
-           ⚔️ ARENA ⚔️
+        ⚔️ ARENA ⚔️
 ================================
 """)
 
