@@ -2,9 +2,16 @@ import random
 import time
 
 
+# ==============================
+# WAIT
+# ==============================
+
 def wait():
+
     for i in range(2):
+
         print(".")
+
         time.sleep(.5)
 
 
@@ -12,276 +19,273 @@ def wait():
 # ENEMY
 # ==============================
 
-turno = 0
+enemy_count = 0
 
 
 class Enemy:
+
     def __init__(self, name, hp, damage, gold, xp):
+
         self.name = name
         self.hp = hp
+        self.max_hp = hp
         self.damage = damage
         self.gold = gold
         self.xp = xp
 
 
-enemies = [
-    Enemy("Zombie", 30, 5, 15, 20),
-    Enemy("Vampire", 40, 7, 20, 25),
-    Enemy("Werewolf", 40, 15, 30, 40),
-    Enemy("Witch", 20, 15, 40, 40),
-    Enemy("Ghost", 40, 10, 40, 40)
+ENEMIES = [
+
+    Enemy("Zombie", 40, 10, 15, 20),
+
+    Enemy("Vampire", 50, 12, 20, 25),
+
+    Enemy("Werewolf", 50, 17, 30, 40),
+
+    Enemy("Witch", 40, 15, 40, 40),
+
+    Enemy("Ghost", 50, 15, 40, 40),
+
 ]
 
-minotaur = Enemy("Minotaur", 400, 20, 500, 250)
+
+BOSSES = [
+
+    Enemy("Minotaur", 400, 20, 500, 250),
+
+]
 
 
 def generate_enemy():
-    if turno % 25 == 0:
-        enemy = minotaur
-    else:
-        enemy = random.choice(enemies)
 
-    damage = enemy.damage * (1 + turno * 0.10)
-    hp = enemy.hp * (1 + turno * 0.10)
+    global enemy_count
+
+    enemy_count += 1
+
+    # Boss a cada 25 inimigos
+
+    if enemy_count % 25 == 0:
+
+        base_enemy = random.choice(BOSSES)
+
+    else:
+
+        base_enemy = random.choice(ENEMIES)
+
+    # +5% de HP e dano por inimigo
+
+    multiplier = 1 + (enemy_count - 1) * 0.05
+
+    hp = round(base_enemy.hp * multiplier)
+
+    damage = round(base_enemy.damage * multiplier)
 
     return Enemy(
-        enemy.name,
+
+        base_enemy.name,
         hp,
         damage,
-        enemy.gold,
-        enemy.xp
+        base_enemy.gold,
+        base_enemy.xp
+
     )
 
+
 # ==============================
-# ITEM
+# WEAPONS
 # ==============================
 
-class Item:
-    def __init__(self, name):
-        self.name = name
+WEAPONS = {
+
+    "Fists": {
+        "damage": 10,
+        "price": 0,
+    },
+
+    "Wooden Sword": {
+        "damage": 20,
+        "price": 45,
+    },
+
+    "Stone Sword": {
+        "damage": 35,
+        "price": 100,
+    },
+
+    "Iron Sword": {
+        "damage": 45,
+        "price": 300,
+    },
+
+    "Diamond Sword": {
+        "damage": 70,
+        "price": 800,
+    },
+
+}
 
 
-items = [
-    Item("15 Gold"),
-    Item("30 Gold"),
-    Item("Health Potion"),
+# ==============================
+# ITEMS
+# ==============================
+
+ITEMS = {
+
+    "Health Potion": {
+        "type": "heal",
+        "value": 50,
+        "price": 20,
+    },
+
+    "Big Health Potion": {
+        "type": "heal",
+        "value": 120,
+        "price": 40,
+    },
+
+}
+
+
+# ==============================
+# NPCS
+# ==============================
+
+NPCS = [
+
+    {
+        "name": "Merchant",
+        "message": "I have some spare Gold. Take it.",
+        "reward": 50,
+    },
+
+    {
+        "name": "Traveler",
+        "message": "The road ahead is dangerous. Take this Gold.",
+        "reward": 25,
+    },
+
+    {
+        "name": "Old Man",
+        "message": "You look like you could use some help.",
+        "reward": 100,
+    },
+
 ]
-
-
-def random_item():
-    return random.choice(items)
-
-
-def find_item(hero):
-    item_found = random_item()
-
-    print(f"You found {item_found.name}!")
-
-    if item_found.name == "15 Gold":
-        hero.gold += 15
-
-        print(f"Gold: {hero.gold}")
-
-    elif item_found.name == "30 Gold":
-        hero.gold += 30
-
-        print("You received 30 Gold!")
-        print(f"Gold: {hero.gold}")
-
-    elif item_found.name == "Health Potion":
-        hero.inventory.append(item_found.name)
-
-        print("You received a Health Potion!")
-
-    wait()
 
 
 # ==============================
 # HERO
 # ==============================
 
-WEAPONS = {
-    "Fists": 10,
-    "Wooden Sword": 20,
-    "Stone Sword": 35,
-    "Iron Sword": 45,
-    "Diamond Sword": 70,
-}
-
 class Hero:
+
     def __init__(self, name):
+
         self.name = name
-        self.hp = 100
+
+        # Status
+
+        self.level = 1
+        self.xp = 0
+        self.xp_need = 100
+
         self.max_hp = 100
+        self.hp = self.max_hp
+
         self.gold = 0
+
+        # Combat
 
         self.weapon = "Fists"
         self.buffs = 0
-        self.level_damage = 0
-        self.damage = WEAPONS[self.weapon] + self.buffs + self.level_damage
-        
+
+        # Inventory
 
         self.inventory = []
-        self.xp = 0
-        self.xp_need = 100
-        self.level = 1
 
-        self.pet_dmg = 0
-        self.pet_name = "none"
+        # Pet
 
-    def update_damage(self):
-        self.damage = WEAPONS[self.weapon] + self.buffs + self.level_damage
+        self.pet = None
 
-    def add_buff(self, amount):
-        self.buffs += amount
-        self.update_damage()
+    @property
+    def damage(self):
 
-    def take_damage(self, amount):
-        self.hp -= amount
+        weapon_damage = WEAPONS[self.weapon]["damage"]
 
-    def leveling(self):
+        level_damage = (self.level - 1) * 5
+
+        return weapon_damage + self.buffs + level_damage
+
+    def gain_xp(self, amount):
+
+        self.xp += amount
+
+        print(f"You earned {amount} XP!")
+
         while self.xp >= self.xp_need:
+
             self.xp -= self.xp_need
+
             self.level += 1
+
             self.xp_need += 25
+
             self.max_hp += 50
-            self.level_damage += 5
-            self.update_damage()
+
             self.hp = self.max_hp
 
             print("LEVEL UP!")
+
             print(f"You are now level {self.level}!")
 
+            print(f"Max HP: {self.max_hp}")
 
-      
+            print(f"Damage: {self.damage}")
 
-# ==============================
-# BATTLE
-# ==============================
+    def take_damage(self, amount):
 
-def battle(hero, enemy):
-    print(f"""
-========== BATTLE ==========
+        self.hp -= amount
 
-A wild {enemy.name} appeared!
-""")
+        if self.hp < 0:
 
-    while hero.hp > 0 and enemy.hp > 0:
-
-        print(f"""
-{hero.name}: {hero.hp}/{hero.max_hp} HP
-{enemy.name}: {enemy.hp} HP
-""")
-
-        print("1 - Attack")
-        print("2 - Run")
-        print("3 - Use Item")
-
-        choice = input("Type here: ")
-
-        if choice == "1":
-
-            enemy.hp -= hero.damage
-
-            print(f"You dealt {hero.damage} damage!")
-
-            if hero.pet_dmg == 0:
-                pass
-
-            else:
-
-                enemy.hp -= hero.pet_dmg
-
-                print(f"Your pet dealt {hero.pet_dmg} damage")
-
-
-
-            if enemy.hp <= 0:
-
-                print(f"You defeated the {enemy.name}!")
-
-                hero.gold += enemy.gold
-
-                print(f"You earned {enemy.gold} gold!")
-
-                hero.xp += enemy.xp
-
-                print(f"You earned {enemy.xp} XP!")
-                hero.leveling()
-
-
-                wait()
-
-                return "victory"
-
-            hero.take_damage(enemy.damage)
-
-            print(
-                f"The {enemy.name} dealt "
-                f"{enemy.damage} damage!"
-            )
-
-        elif choice == "2":
-
-            print("You ran away!")
-
-            wait()
-
-            return "run"
-
-        elif choice == "3":
-
-            use_item(hero)
-
-        else:
-
-            print("Invalid choice.")
-
-    if hero.hp <= 0:
-
-        print("""
-========== DEFEAT ==========
-
-You are dead!
-""")
-
-        lost_gold = hero.gold // 2
-
-        hero.gold -= lost_gold
-
-        print(f"You lost {lost_gold} gold.")
-        print(f"Gold remaining: {hero.gold}")
-
-        hero.hp = hero.max_hp
-
-        wait()
-
-        return "defeat"
+            self.hp = 0
 
 
 # ==============================
 # CHARACTER
 # ==============================
 
-def show_character(hero):
+def character(hero):
+
     print(f"""
 ========== CHARACTER ==========
 
-Hero: {hero.name}
+Name: {hero.name}
+
 Level: {hero.level}
 XP: {hero.xp}/{hero.xp_need}
+
 HP: {hero.hp}/{hero.max_hp}
 Gold: {hero.gold}
-Damage: {hero.damage}
+
 Weapon: {hero.weapon}
+Damage: {hero.damage}
+Buffs: {hero.buffs}
+
+Pet: {hero.pet if hero.pet else "None"}
+
+===============================
 """)
+
+    wait()
 
 
 # ==============================
 # INVENTORY
 # ==============================
 
-def show_inventory(hero):
+def inventory(hero):
+
     print("""
 ========== INVENTORY ==========
 """)
@@ -292,76 +296,331 @@ def show_inventory(hero):
 
     else:
 
-        for i, item in enumerate(hero.inventory, 1):
-            print(f"{i} - {item}")
+        for i, item_name in enumerate(hero.inventory, 1):
 
-
-def use_item(hero):
-
-    if not hero.inventory:
-
-        print("Your inventory is empty.")
-
-        wait()
-
-        return
+            print(f"{i} - {item_name}")
 
     print("""
-========== ITEMS ==========
+===============================
 """)
 
-    for i, item in enumerate(hero.inventory, 1):
-        print(f"{i} - {item}")
+    wait()
 
-    print("0 - Cancel")
 
-    choice = input("Type here: ")
+# ==============================
+# USE ITEM
+# ==============================
 
-    if choice == "0":
-        return
+def use_item(hero, item_name):
 
-    if not choice.isdigit():
+    if item_name not in hero.inventory:
 
-        print("Invalid choice.")
+        print("You don't have this item.")
 
-        return
+        return False
 
-    choice = int(choice)
+    item = ITEMS[item_name]
 
-    if choice < 1 or choice > len(hero.inventory):
-
-        print("Invalid choice.")
-
-        return
-
-    item = hero.inventory[choice - 1]
-
-    if item == "Health Potion":
+    if item["type"] == "heal":
 
         if hero.hp == hero.max_hp:
 
-            print("Your HP is already full.")
+            print("Your HP is already full!")
 
-            return
+            return False
 
         old_hp = hero.hp
 
-        hero.hp = min(
-            hero.hp + 30,
-            hero.max_hp
-        )
+        hero.hp += item["value"]
 
-        hero.inventory.remove(item)
+        if hero.hp > hero.max_hp:
 
-        print("You used a Health Potion!")
+            hero.hp = hero.max_hp
 
-        print(
-            f"HP: {old_hp} -> "
-            f"{hero.hp}/{hero.max_hp}"
-        )
+        healed = hero.hp - old_hp
+
+        print(f"You used a {item_name}!")
+
+        print(f"You recovered {healed} HP!")
+
+    hero.inventory.remove(item_name)
+
+    return True
+
+
+# ==============================
+# BATTLE
+# ==============================
+
+def battle(hero, enemy):
+
+    print(f"""
+========== BATTLE ==========
+
+A wild {enemy.name} appeared!
+""")
+
+    while hero.hp > 0 and enemy.hp > 0:
+
+        print(f"""
+{hero.name}: {hero.hp}/{hero.max_hp} HP
+{enemy.name}: {enemy.hp}/{enemy.max_hp} HP
+
+1 - Attack
+2 - Run
+3 - Use Item
+""")
+
+        choice = input("Type here: ")
+
+        # ==============================
+        # ATTACK
+        # ==============================
+
+        if choice == "1":
+
+            enemy.hp -= hero.damage
+
+            print(f"You dealt {hero.damage} damage!")
+
+            if enemy.hp <= 0:
+
+                enemy.hp = 0
+
+                print(f"You defeated the {enemy.name}!")
+
+                hero.gold += enemy.gold
+
+                print(f"You earned {enemy.gold} Gold!")
+
+                hero.gain_xp(enemy.xp)
+
+                return "victory"
+
+            hero.take_damage(enemy.damage)
+
+            print(
+                f"The {enemy.name} dealt "
+                f"{enemy.damage} damage!"
+            )
+
+        # ==============================
+        # RUN
+        # ==============================
+
+        elif choice == "2":
+
+            print("You ran away!")
+
+            return "run"
+
+        # ==============================
+        # USE ITEM
+        # ==============================
+
+        elif choice == "3":
+
+            if not hero.inventory:
+
+                print("Your inventory is empty!")
+
+                continue
+
+            print("""
+========== INVENTORY ==========
+""")
+
+            for i, item in enumerate(hero.inventory, 1):
+
+                print(f"{i} - {item}")
+
+            print("0 - Cancel")
+
+            item_choice = input("Choose an item: ")
+
+            if item_choice == "0":
+
+                continue
+
+            if not item_choice.isdigit():
+
+                print("Invalid choice.")
+
+                continue
+
+            item_index = int(item_choice) - 1
+
+            if item_index < 0 or item_index >= len(hero.inventory):
+
+                print("Invalid choice.")
+
+                continue
+
+            item_name = hero.inventory[item_index]
+
+            used = use_item(hero, item_name)
+
+            if not used:
+
+                continue
+
+            # Usar item consome o turno
+
+            hero.take_damage(enemy.damage)
+
+            print(
+                f"The {enemy.name} dealt "
+                f"{enemy.damage} damage!"
+            )
+
+        # ==============================
+        # INVALID
+        # ==============================
+
+        else:
+
+            print("Invalid choice.")
+
+    # ==============================
+    # DEFEAT
+    # ==============================
+
+    if hero.hp <= 0:
+
+        print("""
+========== DEFEAT ==========
+
+You were defeated!
+""")
+
+        lost_gold = hero.gold // 2
+
+        hero.gold -= lost_gold
+
+        print(f"You lost {lost_gold} Gold.")
+
+        hero.hp = hero.max_hp
+
+        return "defeat"
+
+
+# ==============================
+# NPC EVENT
+# ==============================
+
+def npc_event(hero):
+
+    npc = random.choice(NPCS)
+
+    print(f"""
+========== NPC ==========
+
+You encountered a {npc["name"]}!
+
+{npc["message"]}
+""")
+
+    print(f"You received {npc['reward']} Gold!")
+
+    hero.gold += npc["reward"]
+
+    wait()
+
+
+# ==============================
+# JOURNEY
+# ==============================
+
+def journey(hero):
+
+    print("""
+========== JOURNEY ==========
+
+You leave the town and begin your journey...
+""")
+
+    wait()
+
+    event = random.randint(1, 1000)
+
+    # ==============================
+    # SPECIAL EVENT
+    # 0.1%
+    # ==============================
+
+    if event == 1:
+
+        print("""
+========== SPECIAL EVENT ==========
+
+Something extremely rare happened!
+""")
 
         wait()
 
+    # ==============================
+    # ENEMY
+    # 84.9%
+    # ==============================
+
+    elif event <= 850:
+
+        enemy = generate_enemy()
+
+        result = battle(hero, enemy)
+
+        return result
+
+    # ==============================
+    # ITEM
+    # 5%
+    # ==============================
+
+    elif event <= 900:
+
+        item_name = random.choice(list(ITEMS.keys()))
+
+        hero.inventory.append(item_name)
+
+        print("""
+========== ITEM ==========
+
+You found an item!
+""")
+
+        print(f"You found a {item_name}!")
+
+        wait()
+
+    # ==============================
+    # TRAP
+    # 5%
+    # ==============================
+
+    elif event <= 950:
+
+        print("""
+========== TRAP ==========
+
+You fell into a trap!
+""")
+
+        damage = hero.hp // 10
+
+        hero.take_damage(damage)
+
+        print(f"You lost {damage} HP!")
+
+        wait()
+
+    # ==============================
+    # NPC
+    # 5%
+    # ==============================
+
+    else:
+
+        npc_event(hero)
 
 
 # ==============================
@@ -375,146 +634,153 @@ def store(hero):
         print(f"""
 ========== STORE ==========
 
-You have {hero.gold} Gold.
+Gold: {hero.gold}
 
-------- CONSUMABLES -------
-
-1 - Health Potion - 15 Gold
-
---------- SWORDS ----------
-
-2 - Wooden Sword  - 45 Gold
-3 - Stone Sword   - 100 Gold
-4 - Iron Sword    - 300 Gold
-5 - Diamond Sword - 800 Gold
-
-6 - Exit
+1 - Weapons
+2 - Items
+3 - Exit
 """)
 
         choice = input("Type here: ")
 
-        # Health Potion
+        # ==============================
+        # WEAPONS
+        # ==============================
+
         if choice == "1":
 
-            if hero.gold >= 15:
+            print("""
+========== WEAPONS ==========
+""")
 
-                hero.gold -= 15
+            weapon_names = list(WEAPONS.keys())
 
-                hero.inventory.append("Health Potion")
+            for i, weapon_name in enumerate(weapon_names, 1):
 
-                print("You bought a Health Potion!")
-                print(f"Gold: {hero.gold}")
+                weapon = WEAPONS[weapon_name]
 
-                wait()
+                print(
+                    f"{i} - {weapon_name} | "
+                    f"Damage: {weapon['damage']} | "
+                    f"Price: {weapon['price']} Gold"
+                )
 
-            else:
+            print("0 - Back")
 
-                print("You don't have enough gold.")
+            weapon_choice = input("Choose a weapon: ")
 
-        # Wooden Sword
+            if weapon_choice == "0":
+
+                continue
+
+            if not weapon_choice.isdigit():
+
+                print("Invalid choice.")
+
+                continue
+
+            weapon_index = int(weapon_choice) - 1
+
+            if weapon_index < 0 or weapon_index >= len(weapon_names):
+
+                print("Invalid choice.")
+
+                continue
+
+            weapon_name = weapon_names[weapon_index]
+
+            weapon = WEAPONS[weapon_name]
+
+            if hero.weapon == weapon_name:
+
+                print("You already have this weapon.")
+
+                continue
+
+            if hero.gold < weapon["price"]:
+
+                print("You don't have enough Gold.")
+
+                continue
+
+            hero.gold -= weapon["price"]
+
+            hero.weapon = weapon_name
+
+            print(f"You bought a {weapon_name}!")
+
+        # ==============================
+        # ITEMS
+        # ==============================
+
         elif choice == "2":
 
-            if hero.weapon == "Wooden Sword":
+            print("""
+========== ITEMS ==========
+""")
 
-                print("You already have a Wooden Sword.")
+            item_names = list(ITEMS.keys())
 
-            elif hero.gold >= 45:
+            for i, item_name in enumerate(item_names, 1):
 
-                hero.gold -= 45
+                item = ITEMS[item_name]
 
-                hero.weapon = "Wooden Sword"
-                hero.update_damage()
+                print(
+                    f"{i} - {item_name} | "
+                    f"Price: {item['price']} Gold"
+                )
 
-                print("You equipped a Wooden Sword!")
-                print(f"Damage: {hero.damage}")
-                print(f"Gold: {hero.gold}")
+            print("0 - Back")
 
-                wait()
+            item_choice = input("Choose an item: ")
 
-            else:
+            if item_choice == "0":
 
-                print("You don't have enough gold.")
+                continue
 
-        # Stone Sword
+            if not item_choice.isdigit():
+
+                print("Invalid choice.")
+
+                continue
+
+            item_index = int(item_choice) - 1
+
+            if item_index < 0 or item_index >= len(item_names):
+
+                print("Invalid choice.")
+
+                continue
+
+            item_name = item_names[item_index]
+
+            item = ITEMS[item_name]
+
+            if hero.gold < item["price"]:
+
+                print("You don't have enough Gold.")
+
+                continue
+
+            hero.gold -= item["price"]
+
+            hero.inventory.append(item_name)
+
+            print(f"You bought a {item_name}!")
+
+        # ==============================
+        # EXIT
+        # ==============================
+
         elif choice == "3":
 
-            if hero.weapon == "Stone Sword":
+            print("You left the store.")
 
-                print("You already have a Stone Sword.")
+            return
 
-            elif hero.gold >= 100:
-
-                hero.gold -= 100
-
-                hero.weapon = "Stone Sword"
-                hero.update_damage()
-
-                print("You equipped a Stone Sword!")
-                print(f"Damage: {hero.damage}")
-                print(f"Gold: {hero.gold}")
-
-                wait()
-
-            else:
-
-                print("You don't have enough gold.")
-
-        # Iron Sword
-        elif choice == "4":
-
-            if hero.weapon == "Iron Sword":
-
-                print("You already have an Iron Sword.")
-
-            elif hero.gold >= 300:
-
-                hero.gold -= 300
-
-                hero.weapon = "Iron Sword"
-                hero.update_damage()
-
-                print("You equipped an Iron Sword!")
-                print(f"Damage: {hero.damage}")
-                print(f"Gold: {hero.gold}")
-
-                wait()
-
-            else:
-
-                print("You don't have enough gold.")
-
-# Diamond Sword
-        elif choice == "5":
-
-            if hero.weapon == "Diamond Sword":
-
-                print("You already have an Diamond Sword.")
-
-            elif hero.gold >= 800:
-
-                hero.gold -= 800
-
-                hero.weapon = "Diamond Sword"
-                hero.update_damage()
-
-                print("You equipped an Diamond Sword!")
-                print(f"Damage: {hero.damage}")
-                print(f"Gold: {hero.gold}")
-
-                wait()
-
-            else:
-
-                print("You don't have enough gold.")
-
-        # Exit
-        elif choice == "6":
-
-            print("You left the Store.")
-
-            wait()
-
-            break
+        # ==============================
+        # INVALID
+        # ==============================
 
         else:
 
@@ -522,74 +788,85 @@ You have {hero.gold} Gold.
 
 
 # ==============================
-# JOURNEY
-# ==============================
-
-def journey(hero):
-    global turno
-
-    print("""
-========== JOURNEY ==========
-
-You leave the town and begin your journey...
-""")
-
-    wait()
-
-    event = random.randint(1, 1000)
-
-    # Special event
-    if event <= 2:
-
-        print("Special!")
-
-        wait()
-
-    # Enemy
-    elif event <= 850:
-
-        turno += 1
-
-        enemy = generate_enemy()
-        battle(hero, enemy)
-
-    # Item
-    elif event <= 950:
-
-        find_item(hero)
-
-    # Trap
-    else:
-
-        print("You fell into a trap!")
-
-        damage = hero.hp // 10
-        hero.hp -= damage
-        print(f"You lose {damage} HP!")
-
-        wait()
-
-
-# ==============================
 # MENU
 # ==============================
 
-def show_menu():
+def menu(hero):
 
-    print(f"""
-    turno {turno}
-What do you want to do?
+    while True:
 
-1 - Go to Store
-2 - Continue your Journey
-3 - Character
-4 - Inventory
+        print(f"""
+========== ARENA ==========
+
+Gold: {hero.gold}
+HP: {hero.hp}/{hero.max_hp}
+
+1 - Journey
+2 - Character
+3 - Inventory
+4 - Store
 5 - Exit
 """)
 
-    choice = input("Type here: ")
+        choice = input("Type here: ")
 
-    return choice
+        # ==============================
+        # JOURNEY
+        # ==============================
+
+        if choice == "1":
+
+            result = journey(hero)
+
+            if result == "defeat":
+
+                print("You returned to town.")
+
+        # ==============================
+        # CHARACTER
+        # ==============================
+
+        elif choice == "2":
+
+            character(hero)
+
+        # ==============================
+        # INVENTORY
+        # ==============================
+
+        elif choice == "3":
+
+            inventory(hero)
+
+        # ==============================
+        # STORE
+        # ==============================
+
+        elif choice == "4":
+
+            store(hero)
+
+        # ==============================
+        # EXIT
+        # ==============================
+
+        elif choice == "5":
+
+            print("""
+========== EXIT ==========
+
+Thanks for playing ARENA!
+""")
+
+            break
+
+        # ==============================
+        # INVALID
+        # ==============================
+
+        else:
+
+            print("Invalid choice.")
 
 
 # ==============================
@@ -599,61 +876,28 @@ What do you want to do?
 def main():
 
     print("""
-================================
-        ⚔️ ARENA ⚔️
-================================
+========== ARENA ==========
+
+Welcome to ARENA!
 """)
 
-    name = input("Give your Hero a name: ")
+    name = input("Enter your name: ")
 
     hero = Hero(name)
 
-    show_character(hero)
+    print(f"""
+Welcome, {hero.name}!
+
+Your adventure begins...
+""")
 
     wait()
 
-    while True:
-
-        choice = show_menu()
-
-        match choice:
-
-            case "1":
-
-                print("You entered the Store.")
-
-                wait()
-
-                store(hero)
-
-            case "2":
-
-                journey(hero)
-
-            case "3":
-
-                show_character(hero)
-
-                wait()
-
-            case "4":
-
-                show_inventory(hero)
-
-                wait()
-
-            case "5":
-
-                print("Goodbye!")
-
-                break
-
-            case _:
-
-                print("Invalid choice.")
-
-                wait()
+    menu(hero)
 
 
-if __name__ == "__main__":
-    main()
+# ==============================
+# START GAME
+# ==============================
+
+main()
