@@ -51,7 +51,7 @@ ENEMIES = [
 
 BOSSES = [
 
-    Enemy("Minotaur", 400, 20, 500, 250),
+    Enemy("Minotaur", 300, 18, 500, 250),
 
 ]
 
@@ -230,7 +230,7 @@ class Hero:
 
             self.xp_need += 25
 
-            self.max_hp += 50
+            self.max_hp += 40
 
             self.hp = self.max_hp
 
@@ -354,15 +354,52 @@ def use_item(hero, item_name):
 
 def battle(hero, enemy):
 
-    print(f"""
+    # Verifica se o inimigo é um boss
+
+    is_boss = any(
+        enemy.name == boss.name
+        for boss in BOSSES
+    )
+
+    if is_boss:
+
+        print(f"""
+========== BOSS BATTLE ==========
+
+A BOSS has appeared!
+
+{enemy.name}!
+
+There is NO ESCAPE.
+
+You must defeat the boss.
+""")
+
+    else:
+
+        print(f"""
 ========== BATTLE ==========
 
 A wild {enemy.name} appeared!
 """)
 
+    wait()
+
     while hero.hp > 0 and enemy.hp > 0:
 
-        print(f"""
+        if is_boss:
+
+            print(f"""
+{hero.name}: {hero.hp}/{hero.max_hp} HP
+{enemy.name}: {enemy.hp}/{enemy.max_hp} HP
+
+1 - Attack
+2 - Use Item
+""")
+
+        else:
+
+            print(f"""
 {hero.name}: {hero.hp}/{hero.max_hp} HP
 {enemy.name}: {enemy.hp}/{enemy.max_hp} HP
 
@@ -405,17 +442,79 @@ A wild {enemy.name} appeared!
             )
 
         # ==============================
-        # RUN
+        # RUN - ONLY NORMAL ENEMIES
         # ==============================
 
-        elif choice == "2":
+        elif choice == "2" and not is_boss:
 
             print("You ran away!")
 
             return "run"
 
         # ==============================
-        # USE ITEM
+        # USE ITEM - BOSS
+        # ==============================
+
+        elif choice == "2" and is_boss:
+
+            if not hero.inventory:
+
+                print("Your inventory is empty!")
+
+                continue
+
+            print("""
+========== INVENTORY ==========
+""")
+
+            for i, item in enumerate(hero.inventory, 1):
+
+                print(f"{i} - {item}")
+
+            print("0 - Cancel")
+
+            item_choice = input("Choose an item: ")
+
+            if item_choice == "0":
+
+                continue
+
+            if not item_choice.isdigit():
+
+                print("Invalid choice.")
+
+                continue
+
+            item_index = int(item_choice) - 1
+
+            if (
+                item_index < 0
+                or item_index >= len(hero.inventory)
+            ):
+
+                print("Invalid choice.")
+
+                continue
+
+            item_name = hero.inventory[item_index]
+
+            used = use_item(hero, item_name)
+
+            if not used:
+
+                continue
+
+            # Usar item consome o turno
+
+            hero.take_damage(enemy.damage)
+
+            print(
+                f"The {enemy.name} dealt "
+                f"{enemy.damage} damage!"
+            )
+
+        # ==============================
+        # USE ITEM - NORMAL ENEMY
         # ==============================
 
         elif choice == "3":
@@ -450,7 +549,10 @@ A wild {enemy.name} appeared!
 
             item_index = int(item_choice) - 1
 
-            if item_index < 0 or item_index >= len(hero.inventory):
+            if (
+                item_index < 0
+                or item_index >= len(hero.inventory)
+            ):
 
                 print("Invalid choice.")
 
@@ -479,29 +581,31 @@ A wild {enemy.name} appeared!
 
         else:
 
-            print("Invalid choice.")
+            if is_boss and choice == "2":
+
+                print("You cannot run from a boss!")
+
+            else:
+
+                print("Invalid choice.")
 
     # ==============================
-    # DEFEAT
+    # DEATH / PERMADEATH
     # ==============================
 
     if hero.hp <= 0:
 
         print("""
-========== DEFEAT ==========
+========== GAME OVER ==========
 
-You were defeated!
+You were defeated.
+
+Your run has ended.
+
+PERMADEATH
 """)
 
-        lost_gold = hero.gold // 2
-
-        hero.gold -= lost_gold
-
-        print(f"You lost {lost_gold} Gold.")
-
-        hero.hp = hero.max_hp
-
-        return "defeat"
+        return "death"
 
 
 # ==============================
@@ -611,6 +715,22 @@ You fell into a trap!
 
         print(f"You lost {damage} HP!")
 
+        # Verifica morte por armadilha
+
+        if hero.hp <= 0:
+
+            print("""
+========== GAME OVER ==========
+
+The trap killed you.
+
+Your run has ended.
+
+PERMADEATH
+""")
+
+            return "death"
+
         wait()
 
     # ==============================
@@ -681,7 +801,10 @@ Gold: {hero.gold}
 
             weapon_index = int(weapon_choice) - 1
 
-            if weapon_index < 0 or weapon_index >= len(weapon_names):
+            if (
+                weapon_index < 0
+                or weapon_index >= len(weapon_names)
+            ):
 
                 print("Invalid choice.")
 
@@ -746,7 +869,10 @@ Gold: {hero.gold}
 
             item_index = int(item_choice) - 1
 
-            if item_index < 0 or item_index >= len(item_names):
+            if (
+                item_index < 0
+                or item_index >= len(item_names)
+            ):
 
                 print("Invalid choice.")
 
@@ -818,9 +944,24 @@ HP: {hero.hp}/{hero.max_hp}
 
             result = journey(hero)
 
-            if result == "defeat":
+            # ==============================
+            # PERMADEATH
+            # ==============================
 
-                print("You returned to town.")
+            if result == "death":
+
+                print("""
+================================
+
+Your character is gone.
+
+Everything from this run
+has been lost.
+
+================================
+""")
+
+                return "death"
 
         # ==============================
         # CHARACTER
@@ -858,7 +999,7 @@ HP: {hero.hp}/{hero.max_hp}
 Thanks for playing ARENA!
 """)
 
-            break
+            return "exit"
 
         # ==============================
         # INVALID
@@ -875,25 +1016,59 @@ Thanks for playing ARENA!
 
 def main():
 
+    global enemy_count
+
     print("""
 ========== ARENA ==========
 
 Welcome to ARENA!
 """)
 
-    name = input("Enter your name: ")
+    while True:
 
-    hero = Hero(name)
+        # Cada nova run começa do zero
 
-    print(f"""
+        enemy_count = 0
+
+        name = input("Enter your name: ")
+
+        hero = Hero(name)
+
+        print(f"""
 Welcome, {hero.name}!
 
 Your adventure begins...
 """)
 
-    wait()
+        wait()
 
-    menu(hero)
+        result = menu(hero)
+
+        # ==============================
+        # PERMADEATH
+        # ==============================
+
+        if result == "death":
+
+            print("""
+========== NEW RUN ==========
+
+Your previous character is dead.
+
+A new adventure begins...
+""")
+
+            wait()
+
+            continue
+
+        # ==============================
+        # NORMAL EXIT
+        # ==============================
+
+        if result == "exit":
+
+            break
 
 
 # ==============================
